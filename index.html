@@ -1,0 +1,121 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#090b14">
+<meta name="description" content="DON'T TAP THE RED — a fast, addictive reflex challenge. Hit blue. Dodge red. Beat your best score and challenge your friends.">
+<title>DON'T TAP THE RED — Reflex Rush</title>
+<style>
+:root{--bg:#090b14;--panel:#121727;--line:#28324b;--muted:#8994ad;--blue:#55e7ff;--red:#ff426d;--gold:#ffd76b}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:radial-gradient(ellipse at 50% -10%,#202b4c 0,#0b1020 48%,#070910 100%);color:#f5f8ff;font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif}
+body{min-height:100svh;display:flex;align-items:center;justify-content:center;padding:14px}
+#app{width:min(100%,560px);margin:auto}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.logo{font-size:clamp(20px,5vw,29px);font-weight:1000;letter-spacing:.06em;line-height:1}
+.logo span{color:var(--red);text-shadow:0 0 18px #ff426d88}
+.kicker{font-size:9px;letter-spacing:.25em;color:#8e9bb8;margin-top:5px;font-weight:800}
+.sound{background:#151d31;border:1px solid #35415e;color:#cfeaff;border-radius:11px;padding:9px 11px;font-weight:800}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.stat{background:#11182adf;border:1px solid var(--line);border-radius:13px;padding:9px 12px}
+.stat small{display:block;color:var(--muted);font-size:9px;letter-spacing:.15em;font-weight:900}
+.stat b{font-size:21px;display:block;margin-top:2px;font-variant-numeric:tabular-nums}
+#score{color:var(--blue)}#best{color:var(--gold)}
+.progress{height:5px;background:#1a2338;border-radius:20px;overflow:hidden;margin-bottom:12px}
+#bar{height:100%;width:100%;background:linear-gradient(90deg,#55e7ff,#8e91ff);transition:width .08s linear}
+#arena{position:relative;background:linear-gradient(145deg,#121a2e,#0c1222);border:1px solid #34415f;border-radius:22px;padding:16px;box-shadow:0 18px 55px #0008,0 0 35px #36dfff0d;overflow:hidden}
+#arena:before{content:"";position:absolute;inset:0;background-image:linear-gradient(#ffffff08 1px,transparent 1px),linear-gradient(90deg,#ffffff08 1px,transparent 1px);background-size:30px 30px;mask-image:linear-gradient(to bottom,#000,transparent);pointer-events:none}
+#prompt{position:relative;text-align:center;margin:0 0 13px;color:#aab8d4;font-size:12px;font-weight:800;letter-spacing:.12em;min-height:18px}
+#grid{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;aspect-ratio:1/1;max-height:470px;margin:auto}
+.tile{border:1px solid #34415e;border-radius:18px;background:linear-gradient(145deg,#202b43,#141d31);position:relative;overflow:hidden;cursor:pointer;touch-action:manipulation;transition:transform .08s,border-color .08s,background .08s;box-shadow:inset 0 1px #ffffff10,0 5px 12px #0003}
+.tile:active{transform:scale(.96)}
+.tile:disabled{cursor:default}
+.tile .orb{position:absolute;width:58%;aspect-ratio:1;border-radius:50%;left:21%;top:21%;opacity:0;transform:scale(.5);transition:opacity .08s,transform .08s}
+.tile.blue .orb{opacity:1;transform:scale(1);background:radial-gradient(circle at 35% 28%,#e6ffff 0,#7cf4ff 14%,#29bfe9 48%,#1769a5 100%);box-shadow:0 0 16px #47e5ff,0 0 35px #27c9ff66}
+.tile.red .orb{opacity:1;transform:scale(1);background:radial-gradient(circle at 35% 28%,#ffe4ed 0,#ff799d 15%,#ff315f 50%,#a8103c 100%);box-shadow:0 0 16px #ff426d,0 0 35px #ff315f66}
+.tile.gold .orb{opacity:1;transform:scale(1);background:radial-gradient(circle at 35% 28%,#fff8dc 0,#ffe58a 18%,#ffb72f 58%,#9f5b10 100%);box-shadow:0 0 18px #ffd76b,0 0 35px #ffb72f77}
+.tile .shine{position:absolute;inset:10%;border-radius:14px;border:1px solid #ffffff0c;pointer-events:none}
+.tile.blue{border-color:#47dffb88}.tile.red{border-color:#ff426d99}.tile.gold{border-color:#ffd76b}
+.tile.hit{animation:hit .16s ease-out}
+@keyframes hit{50%{transform:scale(.92);filter:brightness(1.8)}}
+#overlay{position:absolute;z-index:5;inset:0;display:flex;align-items:center;justify-content:center;padding:18px;background:#080c18d9;backdrop-filter:blur(8px);text-align:center}
+#overlay.hidden{display:none}
+.card{width:min(100%,390px);border:1px solid #455474;border-radius:20px;padding:25px 21px;background:linear-gradient(145deg,#1a2540f5,#0d1428f7);box-shadow:0 0 40px #0008}
+.eyebrow{color:var(--blue);font-size:9px;letter-spacing:.28em;font-weight:1000}
+h1{font-size:clamp(34px,9vw,52px);line-height:.96;letter-spacing:-.04em;margin:12px 0}
+h1 em{font-style:normal;color:var(--red);text-shadow:0 0 22px #ff426d88}
+.card p{color:#b3bfd7;font-size:13px;line-height:1.55;margin:12px 0 19px}
+.primary{border:0;border-radius:13px;padding:14px 24px;background:linear-gradient(100deg,#55e7ff,#9af7ff);color:#07111e;font-weight:1000;letter-spacing:.1em;font-size:13px;cursor:pointer;box-shadow:0 0 24px #55e7ff55}
+.secondary{border:1px solid #4a5b7e;border-radius:12px;padding:12px 16px;background:#17223a;color:#edf8ff;font-weight:800;cursor:pointer}
+.actions{display:flex;gap:9px;justify-content:center;flex-wrap:wrap}
+#message{position:relative;text-align:center;min-height:20px;margin:11px 0 0;font-size:12px;color:#a9b8d5;font-weight:700}
+footer{text-align:center;color:#65728e;font-size:10px;line-height:1.5;margin-top:12px}
+footer b{color:#a9b8d5}
+@media(max-width:390px){body{padding:9px}.stats{gap:5px}.stat{padding:8px}.stat b{font-size:18px}#arena{padding:10px}.tile{border-radius:13px}#grid{gap:7px}}
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+ <div><div class="logo">DON'T TAP <span>THE RED</span></div><div class="kicker">REFLEX RUSH · 30 SECOND CHALLENGE</div></div>
+ <button class="sound" id="sound">♪ SOUND ON</button>
+</header>
+<div class="stats">
+ <div class="stat"><small>SCORE</small><b id="score">0</b></div>
+ <div class="stat"><small>TIME LEFT</small><b id="time">30.0</b></div>
+ <div class="stat"><small>PERSONAL BEST</small><b id="best">0</b></div>
+</div>
+<div class="progress"><div id="bar"></div></div>
+<section id="arena">
+ <div id="prompt">TAP BLUE · AVOID RED · GRAB GOLD</div>
+ <div id="grid" aria-label="Game targets"></div>
+ <div id="overlay">
+  <div class="card">
+   <div class="eyebrow">ONE RULE. ZERO MERCY.</div>
+   <h1>DON'T TAP<br><em>THE RED.</em></h1>
+   <p>Tap the BLUE orbs. Never tap RED. Gold gives bonus points. You have 30 seconds — how high can you score?</p>
+   <div class="actions"><button class="primary" id="start">START CHALLENGE</button></div>
+   <p style="font-size:10px;margin:15px 0 0">Fast fingers win. One red mistake ends your run.</p>
+  </div>
+ </div>
+</section>
+<div id="message">Can you beat 25? Most players can't on their first try.</div>
+<footer>Made for quick rematches. <b>Challenge a friend</b> and see who has the fastest reflexes.</footer>
+</div>
+<script>
+(()=>{
+"use strict";
+const $=id=>document.getElementById(id),grid=$("grid");
+const N=9,DURATION=30;
+let score=0,best=0,time=DURATION,running=false,last=0,spawnClock=0,targets=[],soundOn=true,audio=null,combo=0,round=0;
+try{best=Number(localStorage.getItem("dontTapRedBest"))||0}catch(e){}
+$("best").textContent=best;
+const tiles=[];
+for(let i=0;i<N;i++){const b=document.createElement("button");b.className="tile";b.setAttribute("aria-label","Empty tile");b.innerHTML='<span class="orb"></span><span class="shine"></span>';b.addEventListener("click",()=>tap(i));grid.appendChild(b);tiles.push(b)}
+function tone(f=440,d=.07,type="sine",v=.035){if(!soundOn)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();let o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(v,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+d);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+d)}catch(e){}}
+function update(){ $("score").textContent=score;$("time").textContent=time.toFixed(1);$("best").textContent=best;$("bar").style.width=(time/DURATION*100)+"%";$("bar").style.background=time<8?"linear-gradient(90deg,#ff426d,#ff9a70)":"linear-gradient(90deg,#55e7ff,#9af7ff)"}
+function clearTargets(){targets.forEach(t=>{tiles[t.i].className="tile";tiles[t.i].disabled=true});targets=[]}
+function showTarget(type){let free=tiles.map((_,i)=>i).filter(i=>!targets.some(t=>t.i===i));if(!free.length)return;let i=free[Math.floor(Math.random()*free.length)];let life=Math.max(.48,1.25-score*.009);targets.push({i,type,life,max:life});tiles[i].className="tile "+type;tiles[i].disabled=false}
+function tap(i){if(!running)return;let t=targets.find(x=>x.i===i);if(!t){tone(120,.08,"square",.018);combo=0;$("message").textContent="Too early! Wait for a target.";return}
+ if(t.type==="red"){endGame("red");return}
+ if(t.type==="blue"){score+=10+Math.min(combo,10)*2;combo++;tone(480+Math.min(combo,12)*35,.06,"sine",.035);$("message").textContent=combo>=4?combo+"× COMBO! KEEP IT GOING!":"Nice! Keep your streak alive."}
+ if(t.type==="gold"){score+=30;combo+=2;tone(880,.14,"triangle",.05);$("message").textContent="GOLD BONUS! +30 POINTS"}
+ tiles[i].className="tile hit";tiles[i].disabled=true;targets=targets.filter(x=>x!==t);if(score>best){best=score;try{localStorage.setItem("dontTapRedBest",best)}catch(e){}}update();
+}
+function start(){score=0;time=DURATION;combo=0;round=0;running=true;spawnClock=0;clearTargets();$("overlay").classList.add("hidden");$("message").textContent="GO GO GO!";update();last=performance.now();requestAnimationFrame(loop);tone(660,.1)}
+function endGame(reason){running=false;clearTargets();tone(reason==="red"?95:330,.35,"sawtooth",.05);if(score>best){best=score;try{localStorage.setItem("dontTapRedBest",best)}catch(e){}}update();let title=reason==="red"?"YOU TAPPED RED!":"TIME'S UP!";let line=reason==="red"?"One red tap ends the run. Think you can do better?":"Thirty seconds are gone. Can you beat this score?";$("overlay").innerHTML=`<div class="card"><div class="eyebrow">${score>=100?"REFLEX LEGEND?":"RUN COMPLETE"}</div><h1>${title.replace("RED","<em>RED</em>")}</h1><p>${line}<br><br><strong style="font-size:34px;color:#55e7ff">${score}</strong><br><span style="font-size:10px;letter-spacing:.18em">YOUR SCORE</span><br><span style="color:#ffd76b">BEST: ${best}</span></p><div class="actions"><button class="primary" id="retry">PLAY AGAIN</button><button class="secondary" id="share">CHALLENGE A FRIEND</button></div></div>`;$("overlay").classList.remove("hidden");$("retry").onclick=start;$("share").onclick=shareScore;$("message").textContent=reason==="red"?"The red got you. One more try?":"Time! Share your score and challenge someone."}
+async function shareScore(){let text=`I scored ${score} in DON'T TAP THE RED! Can you beat me?`;let url=location.href;if(navigator.share){try{await navigator.share({title:"DON'T TAP THE RED",text,url})}catch(e){}}else{try{await navigator.clipboard.writeText(text+" "+url);$("message").textContent="Challenge copied! Send it to a friend."}catch(e){$("message").textContent=text}}}
+function loop(now){if(!running)return;let dt=Math.min((now-last)/1000,.05);last=now;time=Math.max(0,time-dt);spawnClock+=dt;
+ let interval=Math.max(.23,.72-score*.0014);
+ if(spawnClock>=interval){spawnClock=0;round++;let count=score<60?1:score<150?2:3;for(let n=0;n<count;n++){let roll=Math.random();let type=roll<(score<30?.17:.28)?"red":roll>.94?"gold":"blue";showTarget(type)}}
+ for(let t of [...targets]){t.life-=dt;if(t.life<=0){tiles[t.i].className="tile";tiles[t.i].disabled=true;targets=targets.filter(x=>x!==t);combo=0}}
+ update();if(time<=0){endGame("time");return}requestAnimationFrame(loop)}
+$("start").onclick=start;$("sound").onclick=()=>{soundOn=!soundOn;$("sound").textContent=soundOn?"♪ SOUND ON":"♪ SOUND OFF";if(soundOn)tone(600,.08)};
+document.addEventListener("visibilitychange",()=>{if(document.hidden&&running){running=false;$("message").textContent="Paused while you were away. Press PLAY AGAIN to restart.";endGame("time")}});
+update();
+})();
+</script>
+</body>
+</html>
